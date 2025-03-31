@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hijos del Destino</title>
+  <style>
+    body {
+      font-family: monospace;
+      background-color: #1a1a1a;
+      color: #f8f8f8;
+      margin: 0;
+      padding: 0;
+    }
+    .game-container {
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .battlefield {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+    }
+    .player-area {
+      width: 45%;
+      border: 2px solid #444;
+      padding: 10px;
+      background-color: #2a2a2a;
+    }
+    .hand {
+      display: flex;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .card {
+      border: 1px solid #ccc;
+      background-color: #444;
+      margin: 5px;
+      padding: 10px;
+      width: 140px;
+      cursor: pointer;
+    }
+    .status {
+      margin-top: 5px;
+    }
+    button {
+      padding: 8px 12px;
+      margin: 10px 0;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>Hijos del Destino - Versión Mejorada</h1>
+    <div id="turn-info"></div>
+
+    <div class="battlefield">
+      <div id="player1" class="player-area">
+        <h2>Jugador 1 - Alester</h2>
+        <p>HP: <span id="hp1">10</span> | Energía: <span id="mana1">3</span> | Cartas en mazo: <span id="mazo1">16</span></p>
+        <div class="hand" id="hand1"></div>
+      </div>
+
+      <div id="player2" class="player-area">
+        <h2>Jugador 2 - Demeth</h2>
+        <p>HP: <span id="hp2">10</span> | Energía: <span id="mana2">3</span> | Cartas en mazo: <span id="mazo2">16</span></p>
+        <div class="hand" id="hand2"></div>
+      </div>
+    </div>
+
+    <button onclick="endTurn()">Terminar Turno</button>
+    <p id="log"></p>
+    <audio id="musica" src="song.mp3" loop></audio>
+    <button onclick="toggleMusica()">🎶 Música</button>
+  </div>
+
+  <script>
+    let musicaActiva = false;
+
+    function toggleMusica() {
+      const audio = document.getElementById("musica");
+      if (!musicaActiva) {
+        audio.play();
+        musicaActiva = true;
+      } else {
+        audio.pause();
+        musicaActiva = false;
+      }
+    }
+
+    const crearMazo = (nombre) => {
+      const armas = [
+        { nombre: "Espada Carmesí", tipo: "arma", costo: 1, efecto: "+1 Daño", bonusAtaque: 1 },
+        { nombre: "Lanza de Hielo", tipo: "arma", costo: 1, efecto: "+1 Daño", bonusAtaque: 1 },
+        { nombre: "Espada Solar", tipo: "arma", costo: 2, efecto: "+2 Daño", bonusAtaque: 2 },
+        { nombre: "Tridente Helado", tipo: "arma", costo: 2, efecto: "+2 Daño", bonusAtaque: 2 },
+        { nombre: "Armadura Fénix", tipo: "armadura", costo: 2, efecto: "-2 Daño recibido", reduccionDanio: 2 },
+        { nombre: "Escudo de Hielo", tipo: "armadura", costo: 2, efecto: "-2 Daño recibido", reduccionDanio: 2 },
+        { nombre: "Capa Infernal", tipo: "armadura", costo: 1, efecto: "-1 Daño recibido", reduccionDanio: 1 },
+      ];
+
+      const hechizosDescarte = [
+        { nombre: "Ruptura Mental", tipo: "ofensivo", costo: 1, efecto: "Descarta 1 carta del enemigo" },
+        { nombre: "Vaciado Arcano", tipo: "ofensivo", costo: 1, efecto: "Descarta 1 carta del enemigo" },
+        { nombre: "Silencio", tipo: "ofensivo", costo: 1, efecto: "Descarta 1 carta del enemigo" },
+        { nombre: "Toque Vacío", tipo: "ofensivo", costo: 1, efecto: "Descarta 1 carta del enemigo" },
+        { nombre: "Niebla de Olvido", tipo: "ofensivo", costo: 1, efecto: "Descarta 1 carta del enemigo" },
+      ];
+
+      const hechizosRecuperacion = [
+        { nombre: "Memoria Eterna", tipo: "soporte", costo: 1, efecto: "Recupera 1 carta del descarte" },
+        { nombre: "Recuerdo Antiguo", tipo: "soporte", costo: 1, efecto: "Recupera 1 carta del descarte" },
+        { nombre: "Eco del Pasado", tipo: "soporte", costo: 1, cura: 1, efecto: "Cura 1 de hp" },
+        { nombre: "Vuelta Atrás", tipo: "soporte", costo: 1, cura: 2, efecto: "Cura 2 de hp" },
+        { nombre: "Regreso de Fuego", tipo: "soporte", costo: 1, efecto: "Recupera 1 carta del descarte" },
+      ];
+
+      const fase1 = { nombre: `${nombre} (Fase 1)`, tipo: "personaje", costo: 0, efecto: "Habilidad inicial" };
+      const fase2 = { nombre: `${nombre} (Fase 2)`, tipo: "personaje", costo: 2, efecto: "Habilidad intermedia" };
+      const fase3 = { nombre: `${nombre} (Fase 3)`, tipo: "personaje", costo: 3, efecto: "Habilidad final" };
+
+      const mazo = [...armas, ...hechizosDescarte, ...hechizosRecuperacion, fase2, fase3];
+      return { faseInicial: fase1, mazo };
+    };
+
+
+    const jugadores = [
+      (() => {
+        const { mazo, faseInicial } = crearMazo("Alester");
+        return {
+          nombre: "Alester",
+          hp: 10,
+          mana: 3,
+          mano: [],
+          mazo,
+          descarte: [],
+          faseInicial,
+          bonusAtaque: 0,
+          reduccionDanio: 0,
+          faseActual: 1
+        };
+      })(),
+      (() => {
+        const { mazo, faseInicial } = crearMazo("Demeth");
+        return {
+          nombre: "Demeth",
+          hp: 10,
+          mana: 3,
+          mano: [],
+          mazo,
+          descarte: [],
+          faseInicial,
+          bonusAtaque: 0,
+          reduccionDanio: 0,
+          faseActual: 1
+        };
+      })()
+    ];
+
+
+        let turno = 0;
+
+    function iniciarJuego() {
+      jugadores.forEach((j) => {
+        j.hp = 10;
+        j.mana = 3;
+        j.bonusAtaque = 0;
+        j.reduccionDanio = 0;
+
+        j.mazo = j.mazo.sort(() => Math.random() - 0.5);
+        const carta1 = j.mazo.shift();
+        const carta2 = j.mazo.shift();
+        j.mano = [j.faseInicial, carta1, carta2];
+      });
+
+      actualizar();
+    }
+
+
+
+
+    function actualizar() {
+      document.getElementById("hp1").textContent = jugadores[0].hp;
+      document.getElementById("mana1").textContent = jugadores[0].mana;
+      document.getElementById("hp2").textContent = jugadores[1].hp;
+      document.getElementById("mana2").textContent = jugadores[1].mana;
+      document.getElementById("mazo1").textContent = jugadores[0].mazo.length;
+      document.getElementById("mazo2").textContent = jugadores[1].mazo.length;
+      document.getElementById("turn-info").textContent = `Turno de ${jugadores[turno % 2].nombre}`;
+      renderizarMano(0);
+      renderizarMano(1);
+    }
+
+    function renderizarMano(i) {
+      const zona = document.getElementById(`hand${i + 1}`);
+      zona.innerHTML = "";
+      jugadores[i].mano.forEach((c, idx) => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `<strong>${c.nombre}</strong><br>${c.efecto}<br>Costo: ${c.costo}`;
+        div.onclick = () => jugarCarta(i, idx);
+        zona.appendChild(div);
+      });
+
+      const imagenId = `img${i + 1}`;
+      let img = document.getElementById(imagenId);
+      if (!img) {
+        img = document.createElement("img");
+        img.id = imagenId;
+        img.style.marginTop = "10px";
+        img.style.maxWidth = "100px";
+        zona.parentElement.appendChild(img);
+      }
+
+      const jugador = jugadores[i];
+      const personaje = jugador.nombre.toLowerCase(); // "alester" o "demeth"
+      const fase = jugador.faseActual || 1; // por defecto fase 1 si no está definida
+      img.src = `${personaje}_fase${fase}.png`;
+      img.alt = `${jugador.nombre} Fase ${fase}`;
+    }
+
+
+    function jugarCarta(j, idx) {
+      const log = document.getElementById("log");
+      if (j !== turno % 2) return;
+      const jugador = jugadores[j];
+      const oponente = jugadores[(j + 1) % 2];
+      const carta = jugador.mano[idx];
+      if (jugador.mana < carta.costo) return;
+      jugador.mana -= carta.costo;
+      jugador.mano.splice(idx, 1);
+
+      let logTexto = `<strong>${jugador.nombre}</strong> juega <em>${carta.nombre}</em><br>`;
+
+      if (carta.tipo === "arma") {
+        if (carta.bonusAtaque) jugador.bonusAtaque += carta.bonusAtaque;
+
+        let daño = calcularDanio(jugador);
+        daño -= oponente.reduccionDanio;
+        if (daño < 0) daño = 0;
+        oponente.hp -= daño;
+        logTexto += `Inflige <strong>${daño}</strong> de daño con arma.<br>`;
+      }
+      
+      if (carta.tipo === "armadura") {
+        if (carta.reduccionDanio) jugador.reduccionDanio += carta.reduccionDanio;
+
+        logTexto += `${jugador.nombre} cuenta con <strong>${jugador.reduccionDanio}</strong> de reducción de daño.<br>`;
+      }      
+      
+       // 🔥 Fase 2 - Evolución desde Fase 1
+      if (carta.tipo === "personaje" && carta.efecto.includes("intermedia")) {
+        if (jugador.faseActual === 1) {
+          jugador.faseActual = 2;
+          if (carta.nombre.includes("Alester")) {
+            jugador.hp += 1;
+          } else {
+            jugador.mana += 4;
+          }
+          logTexto += `${jugador.nombre} evoluciona a Fase 2: <strong>${carta.nombre}</strong><br>`;
+          actualizarImagen(j);
+          renderizarMano(j);
+        } else {
+          logTexto += `No puedes jugar <strong>${carta.nombre}</strong> sin tener Fase 1 en juego.<br>`;
+          jugador.mano.push(carta);
+          jugador.mana += carta.costo;
+          return;
+        }
+      }
+
+      // ❄️ Fase 3 - Evolución desde Fase 2
+      if (carta.tipo === "personaje" && carta.efecto.includes("final")) {
+        if (jugador.faseActual === 2) {
+          jugador.faseActual = 3;
+          if (carta.nombre.includes("Alester")) {
+            jugador.hp += 2;
+          } else {
+            jugador.mana += 5;
+          }
+          logTexto += `${jugador.nombre} evoluciona a Fase Final: <strong>${carta.nombre}</strong><br>`;
+          actualizarImagen(j);
+          renderizarMano(j);
+        } else {
+          logTexto += `No puedes jugar <strong>${carta.nombre}</strong> sin tener Fase 2 en juego.<br>`;
+          jugador.mano.push(carta);
+          jugador.mana += carta.costo;
+          return;
+        }
+      }
+
+
+      if (carta.tipo === "soporte" && carta.efecto.includes("Recupera")) {
+        const recup = jugador.descarte.pop();
+        if (recup) {
+          jugador.mazo.push(recup);
+          logTexto += `Recupera la carta <em>${recup.nombre}</em> del descarte.<br>`;
+        }
+      }
+
+      if (carta.tipo === "soporte" && carta.efecto.includes("Cura")) {
+        const curado = carta.cura;
+        jugador.hp += curado;
+        if (jugador.hp > 16) jugador.hp = 16;
+        if (curado > 0) logTexto += `Recupera <strong>${curado}</strong> de HP.<br>`;
+      }
+
+      if (carta.tipo === "ofensivo" && carta.efecto.includes("Descarta")) {
+        let extra = 1;
+        if (jugador.nombre === "Demeth") {
+          const suerte = Math.random() < 0.5 ? 0 : 1;
+          extra += suerte;
+          logTexto += `Demeth lanza moneda... ${suerte === 1 ? '<strong>¡Éxito!</strong> descarta 1 adicional.' : 'Falla. Solo 1 carta descartada.'}<br>`;
+        }
+        const descartadas = oponente.mazo.splice(0, extra);
+        if (descartadas.length > 0) {
+          logTexto += `Descarta <strong>${descartadas.length}</strong> carta(s) del mazo enemigo.<br>`;
+        }
+      }
+
+      jugador.descarte.push(carta);
+      log.innerHTML = logTexto + log.innerHTML;
+
+      verificarFinDelJuego();
+
+      actualizar();
+    }
+
+    function endTurn() {
+      const log = document.getElementById("log");
+
+      // Tachar el log anterior al finalizar turno
+      if (log.innerHTML.trim() !== "") {
+        const oldLogs = log.innerHTML.split("<br>").map(line => `<s>${line}</s>`).join("<br>");
+        log.innerHTML = oldLogs;
+      }
+
+      const j = jugadores[turno % 2];
+      if (j.mana < 10) j.mana++;
+
+      if (j.mazo.length > 0) {
+        const index = Math.floor(Math.random() * j.mazo.length);
+        const cartaRobada = j.mazo.splice(index, 1)[0];
+        j.mano.push(cartaRobada);
+      }
+
+      turno++;
+      actualizar();
+    }
+
+    function verificarFinDelJuego() {
+      const j1 = jugadores[0];
+      const j2 = jugadores[1];
+
+      if (j1.hp <= 0 || j1.mazo.length === 0) {
+        alert("¡Demeth gana la partida!");
+        location.reload(); // recarga el juego
+      } else if (j2.hp <= 0 || j2.mazo.length === 0) {
+        alert("¡Alester gana la partida!");
+        location.reload();
+      }
+    }
+
+
+  function calcularDanio(jugador) {
+    let base = 1 + jugador.bonusAtaque;
+    if (jugador.nombre === "Alester") {
+      const suerte = Math.random() < 0.5 ? 0 : 1;
+      base += suerte;
+      const log = document.getElementById("log");
+      log.innerHTML = `Alester lanza moneda... ${suerte === 1 ? '<strong>¡Acierta!</strong> +1 de daño extra' : 'Falla. No se aplica bonificación'}<br>` + log.innerHTML;
+    }
+    return base;
+  }
+
+
+    iniciarJuego();
+  </script>
+</body>
+</html>
+
