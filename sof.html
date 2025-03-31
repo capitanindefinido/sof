@@ -74,6 +74,7 @@
     </div>
 
     <button onclick="endTurn()">Terminar Turno</button>
+    <button onclick="reset()">Reiniciar partida</button>
     <p id="log"></p>
     <audio id="musica" src="song.mp3" loop></audio>
     <button onclick="toggleMusica()">🎶 Música</button>
@@ -93,15 +94,50 @@
       }
     }
 
-    const crearMazo = (nombre) => {
+    const crearMazoAlester = (nombre) => {
       const armas = [
         { nombre: "Espada Carmesí", tipo: "arma", costo: 1, efecto: "+1 Daño", bonusAtaque: 1 },
-        { nombre: "Lanza de Hielo", tipo: "arma", costo: 1, efecto: "+1 Daño", bonusAtaque: 1 },
+        { nombre: "Mandoble Igneo", tipo: "arma", costo: 1, efecto: "+1 Daño", bonusAtaque: 1 },
         { nombre: "Espada Solar", tipo: "arma", costo: 2, efecto: "+2 Daño", bonusAtaque: 2 },
-        { nombre: "Tridente Helado", tipo: "arma", costo: 2, efecto: "+2 Daño", bonusAtaque: 2 },
+        { nombre: "Sigmund", tipo: "arma", costo: 2, efecto: "+2 Daño", bonusAtaque: 2 },
         { nombre: "Armadura Fénix", tipo: "armadura", costo: 2, efecto: "-2 Daño recibido", reduccionDanio: 2 },
-        { nombre: "Escudo de Hielo", tipo: "armadura", costo: 2, efecto: "-2 Daño recibido", reduccionDanio: 2 },
+        { nombre: "Visión de puntos críticos", tipo: "armadura", costo: 2, efecto: "-2 Daño recibido", reduccionDanio: 2 },
         { nombre: "Capa Infernal", tipo: "armadura", costo: 1, efecto: "-1 Daño recibido", reduccionDanio: 1 },
+      ];
+
+      const hechizosDescarte = [
+        { nombre: "Igniskell", tipo: "ofensivo", costo: 1, efecto: "Descarta 1 carta del enemigo" },
+        { nombre: "Ala de Fenix", tipo: "ofensivo", costo: 1, efecto: "Descarta 1 carta del enemigo" },
+        { nombre: "Origniskell", tipo: "ofensivo", costo: 1, efecto: "Descarta 1 carta del enemigo" },
+        { nombre: "Deflagración desoladora", tipo: "ofensivo", costo: 1, efecto: "Descarta 1 carta del enemigo" },
+        { nombre: "Extinción del destino", tipo: "ofensivo", costo: 1, efecto: "Descarta 1 carta del enemigo" },
+      ];
+
+      const hechizosRecuperacion = [
+        { nombre: "Defensa de puntos Críticos", tipo: "soporte", costo: 1, efecto: "Recupera 1 carta del descarte" },
+        { nombre: "Quemar ataduras", tipo: "soporte", costo: 1, efecto: "Recupera 1 carta del descarte" },
+        { nombre: "Propulsión", tipo: "soporte", costo: 1, cura: 1, efecto: "Cura 1 de hp" },
+        { nombre: "Represión de Fuego Interno", tipo: "soporte", costo: 1, cura: 2, efecto: "Cura 2 de hp" },
+        { nombre: "Regreso de Fuego", tipo: "soporte", costo: 1, efecto: "Recupera 1 carta del descarte" },
+      ];
+
+      const fase1 = { nombre: `${nombre}`, tipo: "personaje", costo: 0, efecto: "Habilidad inicial" };
+      const fase2 = { nombre: `${nombre} Hijo del Fuego`, tipo: "personaje", costo: 2, efecto: "Habilidad intermedia" };
+      const fase3 = { nombre: `Phoenixter`, tipo: "personaje", costo: 3, efecto: "Habilidad final" };
+
+      const mazo = [...armas, ...hechizosDescarte, ...hechizosRecuperacion, fase2, fase3];
+      return { faseInicial: fase1, mazo };
+    };
+
+    const crearMazoDemeth = (nombre) => {
+      const armas = [
+        { nombre: "Espada Fría", tipo: "arma", costo: 1, efecto: "+1 Daño", bonusAtaque: 1 },
+        { nombre: "Lanza de Hielo", tipo: "arma", costo: 1, efecto: "+1 Daño", bonusAtaque: 1 },
+        { nombre: "Hielo Punzante", tipo: "arma", costo: 2, efecto: "+2 Daño", bonusAtaque: 2 },
+        { nombre: "Tridente Helado", tipo: "arma", costo: 2, efecto: "+2 Daño", bonusAtaque: 2 },
+        { nombre: "Armadura Helada", tipo: "armadura", costo: 2, efecto: "-2 Daño recibido", reduccionDanio: 2 },
+        { nombre: "Escudo de Hielo", tipo: "armadura", costo: 2, efecto: "-2 Daño recibido", reduccionDanio: 2 },
+        { nombre: "Capa Fría", tipo: "armadura", costo: 1, efecto: "-1 Daño recibido", reduccionDanio: 1 },
       ];
 
       const hechizosDescarte = [
@@ -117,12 +153,12 @@
         { nombre: "Recuerdo Antiguo", tipo: "soporte", costo: 1, efecto: "Recupera 1 carta del descarte" },
         { nombre: "Eco del Pasado", tipo: "soporte", costo: 1, cura: 1, efecto: "Cura 1 de hp" },
         { nombre: "Vuelta Atrás", tipo: "soporte", costo: 1, cura: 2, efecto: "Cura 2 de hp" },
-        { nombre: "Regreso de Fuego", tipo: "soporte", costo: 1, efecto: "Recupera 1 carta del descarte" },
+        { nombre: "Regreso de Hielo", tipo: "soporte", costo: 1, efecto: "Recupera 1 carta del descarte" },
       ];
 
-      const fase1 = { nombre: `${nombre} (Fase 1)`, tipo: "personaje", costo: 0, efecto: "Habilidad inicial" };
-      const fase2 = { nombre: `${nombre} (Fase 2)`, tipo: "personaje", costo: 2, efecto: "Habilidad intermedia" };
-      const fase3 = { nombre: `${nombre} (Fase 3)`, tipo: "personaje", costo: 3, efecto: "Habilidad final" };
+      const fase1 = { nombre: `${nombre}`, tipo: "personaje", costo: 0, efecto: "Habilidad inicial" };
+      const fase2 = { nombre: `${nombre} Hijo del Hielo`, tipo: "personaje", costo: 2, efecto: "Habilidad intermedia" };
+      const fase3 = { nombre: `Celseth`, tipo: "personaje", costo: 3, efecto: "Habilidad final" };
 
       const mazo = [...armas, ...hechizosDescarte, ...hechizosRecuperacion, fase2, fase3];
       return { faseInicial: fase1, mazo };
@@ -131,7 +167,7 @@
 
     const jugadores = [
       (() => {
-        const { mazo, faseInicial } = crearMazo("Alester");
+        const { mazo, faseInicial } = crearMazoAlester("Alester");
         return {
           nombre: "Alester",
           hp: 10,
@@ -146,7 +182,7 @@
         };
       })(),
       (() => {
-        const { mazo, faseInicial } = crearMazo("Demeth");
+        const { mazo, faseInicial } = crearMazoDemeth("Demeth");
         return {
           nombre: "Demeth",
           hp: 10,
@@ -182,7 +218,9 @@
     }
 
 
-
+    function reset() {
+      location.reload()
+    }
 
     function actualizar() {
       document.getElementById("hp1").textContent = jugadores[0].hp;
@@ -264,7 +302,7 @@
           }
           logTexto += `${jugador.nombre} evoluciona a Fase 2: <strong>${carta.nombre}</strong><br>`;
           actualizarImagen(j);
-          renderizarMano(j);
+          //renderizarMano(j);
         } else {
           logTexto += `No puedes jugar <strong>${carta.nombre}</strong> sin tener Fase 1 en juego.<br>`;
           jugador.mano.push(carta);
@@ -284,7 +322,7 @@
           }
           logTexto += `${jugador.nombre} evoluciona a Fase Final: <strong>${carta.nombre}</strong><br>`;
           actualizarImagen(j);
-          renderizarMano(j);
+          //renderizarMano(j);
         } else {
           logTexto += `No puedes jugar <strong>${carta.nombre}</strong> sin tener Fase 2 en juego.<br>`;
           jugador.mano.push(carta);
@@ -324,6 +362,10 @@
 
       jugador.descarte.push(carta);
       log.innerHTML = logTexto + log.innerHTML;
+
+      if(jugador.mana === 0){
+        endTurn();
+      }
 
       verificarFinDelJuego();
 
